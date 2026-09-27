@@ -55,6 +55,11 @@ locals {
       Resource = "${local.ec2_arn}:*", Condition = local.tagged
     },
     {
+      Sid       = "CreateTaggedEgressRules", Effect = "Allow", Action = ["ec2:AuthorizeSecurityGroupEgress"]
+      Resource  = "${local.ec2_arn}:security-group-rule/*"
+      Condition = local.creation
+    },
+    {
       Sid      = "TagAtCreation", Effect = "Allow", Action = ["ec2:CreateTags"]
       Resource = "${local.ec2_arn}:*"
       Condition = { StringEquals = {
