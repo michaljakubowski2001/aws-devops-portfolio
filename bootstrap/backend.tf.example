@@ -1,0 +1,5 @@
+# Copy to backend.tf ONLY after the first locally approved bootstrap apply.
+# Then migrate the local bootstrap state using a DIFFERENT key: bootstrap/terraform.tfstate.
+terraform {
+  backend "s3" {}
+}

@@ -1,0 +1,5 @@
+region            = "eu-central-1"
+project           = "aws-devops-portfolio"
+github_repository = "michaljakubowski2001/aws-devops-portfolio"
+# If GitHub OIDC already exists in your account, reuse it rather than creating a duplicate:
+# existing_github_oidc_provider_arn = "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"
