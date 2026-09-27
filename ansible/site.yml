@@ -1,0 +1,66 @@
+---
+- name: Configure the AWS portfolio with unchanged upstream roles
+  hosts: portfolio
+  gather_facts: false
+  vars:
+    images: "{{ upstream.images }}"
+    memory_limits: "{{ upstream.memory_limits }}"
+    kuma_monitors: "{{ upstream.kuma_monitors }}"
+  pre_tasks:
+    - name: Load only non-secret upstream defaults under a namespace
+      ansible.builtin.include_vars:
+        file: ../vendor/mikrus-devops-portfolio/inventories/production/group_vars/all/main.yml
+        name: upstream
+
+    - name: Wait for the SSM connection
+      ansible.builtin.wait_for_connection:
+        delay: 10
+        timeout: 600
+
+    - name: Wait for cloud-init to install Docker and monitoring prerequisites
+      ansible.builtin.command: cloud-init status --wait
+      changed_when: false
+
+    - name: Gather EC2 facts after cloud-init
+      ansible.builtin.setup:
+
+    - name: Generate application credentials only on the instance
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import json, os, secrets
+            path = '/opt/devops-portfolio/credentials.json'
+            values = {key: secrets.token_urlsafe(48) for key in (
+                'vault_grafana_password', 'vault_kuma_password', 'vault_vaultwarden_admin_token')}
+            fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(fd, 'w') as output:
+                json.dump(values, output)
+        creates: /opt/devops-portfolio/credentials.json
+      no_log: true
+
+    - name: Read persistent instance credentials over the encrypted SSM channel
+      ansible.builtin.slurp:
+        src: /opt/devops-portfolio/credentials.json
+      register: app_credentials
+      no_log: true
+
+    - name: Provide the existing roles with their expected variable names
+      ansible.builtin.set_fact:
+        vault_grafana_password: "{{ (app_credentials.content | b64decode | from_json).vault_grafana_password }}"
+        vault_kuma_password: "{{ (app_credentials.content | b64decode | from_json).vault_kuma_password }}"
+        vault_vaultwarden_admin_token: "{{ (app_credentials.content | b64decode | from_json).vault_vaultwarden_admin_token }}"
+      no_log: true
+  roles:
+    - platform
+    - stack
+  post_tasks:
+    - name: Test application availability using curl on EC2
+      ansible.builtin.command:
+        argv: [curl, --fail, --silent, --show-error, --max-time, '30', "{{ item }}"]
+      loop:
+        - http://localhost:20157/alive
+        - http://localhost:30157/api/status-page/portfolio
+        - http://localhost:20158/api/health
+      changed_when: false

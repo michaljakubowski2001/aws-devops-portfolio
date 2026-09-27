@@ -1,0 +1,7 @@
+---
+all:
+  children:
+    portfolio:
+      hosts:
+        aws:
+          ansible_host: i-0123456789abcdef0

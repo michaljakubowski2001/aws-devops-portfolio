@@ -1,0 +1,3 @@
+[submodule "vendor/mikrus-devops-portfolio"]
+	path = vendor/mikrus-devops-portfolio
+	url = https://github.com/michaljakubowski2001/mikrus-devops-portfolio.git

@@ -1,0 +1,14 @@
+---
+ansible_connection: amazon.aws.aws_ssm
+ansible_aws_ssm_region: eu-central-1
+ansible_aws_ssm_bucket_name: "{{ lookup('ansible.builtin.env', 'TRANSFER_BUCKET') }}"
+ansible_aws_ssm_bucket_sse_mode: AES256
+ansible_aws_ssm_s3_addressing_style: virtual
+ansible_become: true
+project_root: /opt/devops-portfolio
+# EC2 /proc is not virtualized by Mikrus LXCFS. Both scrape jobs use our exporter.
+host_metrics_port: 19100
+# Browser access uses encrypted SSM tunnels. Localhost is a secure browser context.
+vaultwarden_url: http://localhost:20157
+kuma_url: http://localhost:30157
+grafana_url: http://localhost:20158
