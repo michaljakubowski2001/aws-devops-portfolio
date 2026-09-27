@@ -1,5 +1,7 @@
 region            = "eu-central-1"
 project           = "aws-devops-portfolio"
 github_repository = "michaljakubowski2001/aws-devops-portfolio"
+# gh api repos/OWNER/REPO/actions/oidc/customization/sub --jq .sub_claim_prefix
+github_oidc_subject_prefix = "repo:michaljakubowski2001@189158860/aws-devops-portfolio@1391264686"
 # If GitHub OIDC already exists in your account, reuse it rather than creating a duplicate:
 # existing_github_oidc_provider_arn = "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"

@@ -92,10 +92,10 @@ resource "aws_iam_role" "github" {
       Condition = { StringEquals = {
         "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
         "token.actions.githubusercontent.com:sub" = each.key == "deploy" ? [
-          "repo:${var.github_repository}:environment:production"
+          "${var.github_oidc_subject_prefix}:environment:production"
           ] : [
-          "repo:${var.github_repository}:environment:planning",
-          "repo:${var.github_repository}:ref:refs/heads/main"
+          "${var.github_oidc_subject_prefix}:environment:planning",
+          "${var.github_oidc_subject_prefix}:ref:refs/heads/main"
         ]
       } }
     }]

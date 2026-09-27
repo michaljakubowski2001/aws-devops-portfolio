@@ -25,6 +25,15 @@ variable "github_repository" {
     error_message = "Use owner/repository, without wildcards."
   }
 }
+variable "github_oidc_subject_prefix" {
+  description = "Immutable OIDC subject prefix (owner and repository IDs) as reported by GET /repos/{repo}/actions/oidc/customization/sub."
+  type        = string
+  default     = "repo:michaljakubowski2001@189158860/aws-devops-portfolio@1391264686"
+  validation {
+    condition     = can(regex("^repo:[A-Za-z0-9_.-]+@[0-9]+/[A-Za-z0-9_.-]+@[0-9]+$", var.github_oidc_subject_prefix))
+    error_message = "Use the immutable form repo:owner@ownerId/repository@repositoryId, without wildcards."
+  }
+}
 variable "existing_github_oidc_provider_arn" {
   description = "Reuse an existing account-wide GitHub OIDC provider when present."
   type        = string

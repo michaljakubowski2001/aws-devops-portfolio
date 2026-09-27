@@ -52,7 +52,7 @@ The instance is in one public subnet with an Internet Gateway and an ephemeral p
 
 ## Security
 
-GitHub authenticates through short-lived OIDC credentials. **No AWS access keys are stored in GitHub Secrets.** Trust checks the exact repository, `sts.amazonaws.com` audience and permitted subject:
+GitHub authenticates through short-lived OIDC credentials. **No AWS access keys are stored in GitHub Secrets.** Trust checks the `sts.amazonaws.com` audience and an exact subject. The repository uses GitHub's **immutable OIDC subject** (`repo:michaljakubowski2001@189158860/aws-devops-portfolio@1391264686:...`), which embeds the owner and repository IDs, so a renamed or re-created repository with the same name cannot assume the roles. Read the prefix with `gh api repos/OWNER/REPO/actions/oidc/customization/sub` and set `github_oidc_subject_prefix` accordingly:
 
 | Role | Trusted subject | Permissions |
 | --- | --- | --- |
