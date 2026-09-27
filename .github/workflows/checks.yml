@@ -1,0 +1,43 @@
+name: Validate and PR plan
+on:
+  push:
+    branches-ignore: [main]
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          submodules: true
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Validate both roots without AWS credentials
+        env:
+          AWS_EC2_METADATA_DISABLED: 'true'
+        run: |
+          terraform fmt -check -recursive bootstrap infra
+          for root in bootstrap infra; do
+            terraform -chdir="$root" init -backend=false -input=false -lockfile=readonly
+            terraform -chdir="$root" validate
+            tflint --chdir="$root" --config="$GITHUB_WORKSPACE/.tflint.hcl"
+          done
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.13'
+      - name: Check Ansible integration without connecting to a host
+        env:
+          ANSIBLE_HOME: ${{ github.workspace }}/.ansible
+        run: |
+          pip install -r ansible/requirements.txt
+          ansible-galaxy collection install -r ansible/requirements.yml -p .ansible/collections
+          ansible-playbook -i ansible/inventory/example.yml ansible/site.yml --syntax-check
+      - name: Record the current activation gate
+        env:
+          AWS_READY: ${{ vars.AWS_READY }}
+        run: |
+          if [[ "$AWS_READY" != true ]]; then
+            echo 'AWS is not activated: credentials, cloud plans and deployment are intentionally disabled.' >> "$GITHUB_STEP_SUMMARY"
+          fi

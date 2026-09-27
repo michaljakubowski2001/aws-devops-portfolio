@@ -1,0 +1,16 @@
+name: Production apply
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  checks:
+    uses: ./.github/workflows/checks.yml
+  deploy:
+    needs: checks
+    if: vars.AWS_READY == 'true'
+    uses: ./.github/workflows/change.yml
+    with:
+      destroy: false

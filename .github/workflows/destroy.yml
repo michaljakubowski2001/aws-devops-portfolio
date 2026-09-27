@@ -1,0 +1,20 @@
+name: Destroy infrastructure
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type DESTROY to plan deletion of infra; bootstrap will remain.'
+        required: true
+        type: string
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  checks:
+    if: github.ref == 'refs/heads/main' && inputs.confirm == 'DESTROY' && vars.AWS_READY == 'true'
+    uses: ./.github/workflows/checks.yml
+  destroy:
+    needs: checks
+    uses: ./.github/workflows/change.yml
+    with:
+      destroy: true

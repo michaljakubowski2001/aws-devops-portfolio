@@ -1,0 +1,64 @@
+name: Pull request plan
+on:
+  pull_request:
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+jobs:
+  validate:
+    uses: ./.github/workflows/checks.yml
+  pr-plan:
+    needs: validate
+    if: >-
+      github.event_name == 'pull_request' && vars.AWS_READY == 'true' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    environment: planning
+    concurrency:
+      group: aws-devops-portfolio-state
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    runs-on: ubuntu-24.04
+    env:
+      AWS_REGION: eu-central-1
+      STATE_BUCKET: ${{ vars.STATE_BUCKET }}
+      TF_VAR_instance_profile_name: ${{ vars.INSTANCE_PROFILE_NAME }}
+      TF_IN_AUTOMATION: 'true'
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          submodules: true
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - uses: aws-actions/configure-aws-credentials@cabfdba3510de1431bac9dba27511d97497fc100
+        with:
+          role-to-assume: ${{ vars.PLAN_ROLE_ARN }}
+          aws-region: eu-central-1
+          role-session-name: portfolio-plan-${{ github.run_id }}
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
+      - run: bash scripts/backend.sh
+      - name: Produce an advisory PR plan
+        id: plan
+        shell: bash
+        run: |
+          mkdir -p .artifacts
+          set +e
+          terraform -chdir=infra plan -input=false -lock-timeout=120s -no-color > .artifacts/plan.txt 2>&1
+          status=$?
+          set -e
+          cat .artifacts/plan.txt
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+      - name: Post plan or error as a PR comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          python3 scripts/plan-comment.py
+          gh pr comment "$PR_NUMBER" --body-file .artifacts/comment.md
+      - name: Fail when planning failed
+        env:
+          PLAN_STATUS: ${{ steps.plan.outputs.status }}
+        run: test "$PLAN_STATUS" = 0

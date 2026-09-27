@@ -1,0 +1,15 @@
+name: Terraform toolchain
+description: Install pinned Terraform and TFLint binaries without authenticating to AWS
+runs:
+  using: composite
+  steps:
+    - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+      with:
+        terraform_version: 1.16.4
+        terraform_wrapper: false
+    - uses: terraform-linters/setup-tflint@6770de8d186019a148cc2b144e8bfa627f7d4aa8
+      with:
+        tflint_version: v0.64.0
+    - name: Initialize linter rules
+      shell: bash
+      run: tflint --init
