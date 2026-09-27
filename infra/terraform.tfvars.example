@@ -1,0 +1,5 @@
+region                = "eu-central-1"
+project               = "aws-devops-portfolio"
+instance_profile_name = "aws-devops-portfolio-instance"
+# Optional: pin the AMI selected in the first reviewed plan.
+# ami_id = "ami-0123456789abcdef0"
