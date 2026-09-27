@@ -55,6 +55,13 @@ locals {
       Resource = "${local.ec2_arn}:*", Condition = local.tagged
     },
     {
+      # Child resources are also authorized against their parent VPC, where only existing tags apply.
+      Sid       = "CreateInsideTaggedVpc", Effect = "Allow"
+      Action    = ["ec2:CreateSubnet", "ec2:CreateRouteTable", "ec2:CreateSecurityGroup"]
+      Resource  = "${local.ec2_arn}:vpc/*"
+      Condition = local.tagged
+    },
+    {
       Sid       = "CreateTaggedEgressRules", Effect = "Allow", Action = ["ec2:AuthorizeSecurityGroupEgress"]
       Resource  = "${local.ec2_arn}:security-group-rule/*"
       Condition = local.creation
