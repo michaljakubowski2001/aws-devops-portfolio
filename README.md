@@ -2,6 +2,12 @@
 
 [![Production apply](https://github.com/michaljakubowski2001/aws-devops-portfolio/actions/workflows/apply.yml/badge.svg)](https://github.com/michaljakubowski2001/aws-devops-portfolio/actions/workflows/apply.yml)
 
+> **TL;DR** – The same Ansible roles as [mikrus-devops-portfolio](https://github.com/michaljakubowski2001/mikrus-devops-portfolio), deployed to AWS with Terraform and GitHub Actions.
+> - No AWS keys in CI (OIDC), no inbound ports and no SSH key (SSM only).
+> - Least-privilege deploy role, tested with the IAM policy simulator before deployment.
+> - The approved Terraform plan is applied exactly; the environment is destroyed after each test (about $0.02 per run).
+> - Real deployment failures and fixes: see [Troubleshooting log](#troubleshooting-log).
+
 A self-hosted monitoring and password-manager stack moved from a 2 GB VPS ([mikrus-devops-portfolio](https://github.com/michaljakubowski2001/mikrus-devops-portfolio)) to AWS. Terraform builds the infrastructure, GitHub Actions deploys it through OIDC and an approval gate, and the **same, unchanged Ansible roles** configure the applications over AWS Systems Manager.
 
 **Status:** deployed end to end by the pipeline from commit [`339130c`](https://github.com/michaljakubowski2001/aws-devops-portfolio/commit/339130c318aae3c2f7f4bb1e9c8c8c7811131937) ([run](https://github.com/michaljakubowski2001/aws-devops-portfolio/actions/runs/36347354637)), verified, then removed with the approved destroy workflow ([run](https://github.com/michaljakubowski2001/aws-devops-portfolio/actions/runs/36348971073)) and confirmed empty with the AWS CLI. The bootstrap layer (state bucket, OIDC, IAM roles) is kept so the environment can be recreated from `main`.
