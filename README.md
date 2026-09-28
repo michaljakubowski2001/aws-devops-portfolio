@@ -4,7 +4,7 @@
 
 A self-hosted monitoring and password-manager stack moved from a 2 GB VPS ([mikrus-devops-portfolio](https://github.com/michaljakubowski2001/mikrus-devops-portfolio)) to AWS. Terraform builds the infrastructure, GitHub Actions deploys it through OIDC and an approval gate, and the **same, unchanged Ansible roles** configure the applications over AWS Systems Manager.
 
-**Status:** deployed end to end by the pipeline from commit [`833a492`](https://github.com/michaljakubowski2001/aws-devops-portfolio/commit/833a492e6316880e97890ed3dccf37f0202afd8b) ([run](https://github.com/michaljakubowski2001/aws-devops-portfolio/actions/runs/36347354637)), verified, then removed with the approved destroy workflow ([run](https://github.com/michaljakubowski2001/aws-devops-portfolio/actions/runs/36348971073)) and confirmed empty with the AWS CLI. The bootstrap layer (state bucket, OIDC, IAM roles) is kept so the environment can be recreated from `main`.
+**Status:** deployed end to end by the pipeline from commit [`339130c`](https://github.com/michaljakubowski2001/aws-devops-portfolio/commit/339130c318aae3c2f7f4bb1e9c8c8c7811131937) ([run](https://github.com/michaljakubowski2001/aws-devops-portfolio/actions/runs/36347354637)), verified, then removed with the approved destroy workflow ([run](https://github.com/michaljakubowski2001/aws-devops-portfolio/actions/runs/36348971073)) and confirmed empty with the AWS CLI. The bootstrap layer (state bucket, OIDC, IAM roles) is kept so the environment can be recreated from `main`.
 
 ## Highlights
 
@@ -62,7 +62,7 @@ Cloud jobs run only when the repository variable `AWS_READY` is `true`.
 
 ## Design decisions
 
-- **Reuse without changing Mikrus.** `vendor/mikrus-devops-portfolio` is a submodule pinned to `31d0058`. Ansible loads the `platform` and `stack` roles from it directly. Non-secret upstream variables (image digests, memory limits, monitors) are imported under a namespace. The encrypted Mikrus vault is never loaded.
+- **Reuse without changing Mikrus.** `vendor/mikrus-devops-portfolio` is a submodule pinned to `e512422`. Ansible loads the `platform` and `stack` roles from it directly. Non-secret upstream variables (image digests, memory limits, monitors) are imported under a namespace. The encrypted Mikrus vault is never loaded.
 - **Only the inventory differs.** [`group_vars/portfolio.yml`](ansible/inventory/group_vars/portfolio.yml) sets:
   - the SSM connection;
   - localhost URLs;
@@ -109,12 +109,12 @@ Real failures from the first deployment and how they were fixed.
 **1. OIDC: `Not authorized to perform sts:AssumeRoleWithWebIdentity`**
 - *Problem:* the first CI plan could not assume the plan role.
 - *Cause:* the repository uses GitHub's **immutable OIDC subject**, so the token carried `repo:michaljakubowski2001@189158860/aws-devops-portfolio@1391264686:ref:refs/heads/main` instead of `repo:owner/repo:...` (found with `gh api repos/OWNER/REPO/actions/oidc/customization/sub`).
-- *Fix:* the trust policies match the immutable format through a validated `github_oidc_subject_prefix` variable ([`b1ce781`](https://github.com/michaljakubowski2001/aws-devops-portfolio/commit/b1ce781891a227b3d877ef3e418b8b582f977f7a)). The condition was made more precise, not loosened with a wildcard.
+- *Fix:* the trust policies match the immutable format through a validated `github_oidc_subject_prefix` variable ([`40c1691`](https://github.com/michaljakubowski2001/aws-devops-portfolio/commit/40c1691625a315a8a17629ef7870642084ea4f7c)). The condition was made more precise, not loosened with a wildcard.
 
 **2. IAM: 403 on `CreateSubnet`, `CreateRouteTable`, `CreateSecurityGroup`**
 - *Problem:* apply created the VPC, Internet Gateway and log group, then failed. Terraform recorded the partial state, so nothing was orphaned.
 - *Cause:* these actions are authorized against the new resource **and** the parent VPC. The policy required `aws:RequestTag/Project`, which only exists for the resource being created, not for an existing VPC.
-- *Fix:* a separate statement allows the three actions on `vpc/*` only when `ec2:ResourceTag/Project` matches ([`fdc810f`](https://github.com/michaljakubowski2001/aws-devops-portfolio/commit/fdc810f)).
+- *Fix:* a separate statement allows the three actions on `vpc/*` only when `ec2:ResourceTag/Project` matches ([`e64ef95`](https://github.com/michaljakubowski2001/aws-devops-portfolio/commit/e64ef95)).
 
 **3. Finding 403s one per run**
 - *Problem:* each missing permission cost a full pipeline run and left partially created infrastructure.
@@ -122,14 +122,14 @@ Real failures from the first deployment and how they were fixed.
   - The API calls were taken from the plan and from the `aws_ssm` plugin source.
   - Resource types were checked against the AWS Service Authorization Reference.
   - Result: 63/63, including 11 checks that must be denied.
-  - The next run ([`833a492`](https://github.com/michaljakubowski2001/aws-devops-portfolio/commit/833a492e6316880e97890ed3dccf37f0202afd8b)) passed end to end in about 14 minutes: plan, apply (7 added), Ansible `changed=8` then `changed=0`, and all smoke tests.
+  - The next run ([`339130c`](https://github.com/michaljakubowski2001/aws-devops-portfolio/commit/339130c318aae3c2f7f4bb1e9c8c8c7811131937)) passed end to end in about 14 minutes: plan, apply (7 added), Ansible `changed=8` then `changed=0`, and all smoke tests.
 
 ## Screenshots
 
 Captured through SSM port-forwarding tunnels from the live instance with [`scripts/capture-screenshots.py`](scripts/capture-screenshots.py).
 
 **Grafana on AWS** (dashboard provisioned by the reused role). Two panels are empty for reasons inside the unchanged role:
-- *Network throughput* queries interface `eth0`, the Mikrus container's name; the EC2 Nitro interface is `ens5`. Fixed upstream in [`5087569`](https://github.com/michaljakubowski2001/mikrus-devops-portfolio/commit/5087569); the submodule now pins that fix (the screenshot predates it).
+- *Network throughput* queries interface `eth0`, the Mikrus container's name; the EC2 Nitro interface is `ens5`. Fixed upstream in [`3f810bf`](https://github.com/michaljakubowski2001/mikrus-devops-portfolio/commit/3f810bf); the submodule now pins that fix (the screenshot predates it).
 - *Prometheus storage* counts only persisted TSDB blocks, and the first block is written after about two hours.
 
 ![Grafana dashboard on AWS](docs/screenshots/grafana-aws.png)
