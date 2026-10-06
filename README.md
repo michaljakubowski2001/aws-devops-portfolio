@@ -7,6 +7,7 @@
 > - Least-privilege deploy role, tested with the IAM policy simulator before deployment.
 > - The approved Terraform plan is applied exactly; the environment is destroyed after each test (about $0.02 per run).
 > - Real deployment failures and fixes: see [Troubleshooting log](#troubleshooting-log).
+> - Continued on Kubernetes: the same services deployed by Argo CD in [k8s-gitops-portfolio](https://github.com/michaljakubowski2001/k8s-gitops-portfolio).
 
 A self-hosted monitoring and password-manager stack moved from a 2 GB VPS ([mikrus-devops-portfolio](https://github.com/michaljakubowski2001/mikrus-devops-portfolio)) to AWS. Terraform builds the infrastructure, GitHub Actions deploys it through OIDC and an approval gate, and the **same, unchanged Ansible roles** configure the applications over AWS Systems Manager.
 
